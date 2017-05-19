@@ -45,5 +45,5 @@ class Building(Institution):
         self.closing_time = closing_time
         self.door_locs = door_locs
         self.capacity = capacity
-
+ 
 
