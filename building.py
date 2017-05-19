@@ -39,9 +39,11 @@ class Building(Institution):
     """
 
     def __init__(self, type='building', infection_probability=0.0, geographical_loc=(0, 0, 0, 0), list_students=[], \
-                 opening_time=0.0, closing_time=0.0, door_locs=[]):
+                 opening_time=0.0, closing_time=0.0, door_locs=[], capacity=0):
         Institution.__init__(self, type, infection_probability, geographical_loc, list_students)
         self.opening_time = opening_time
         self.closing_time = closing_time
         self.door_locs = door_locs
+        self.capacity = capacity
+
 
