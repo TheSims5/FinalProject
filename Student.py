@@ -16,10 +16,10 @@ PROPORTION_STARTING_AT_HUSKY_VILLAGE = None
 # ==============================================================================
 
 import numpy as np
-from Schedule import Schedule
-from parkingArea import ParkingArea
-from busStop import BusStop
-from schoolHousing import SchoolHousing
+from schedule import Schedule
+from parking_area import ParkingArea
+from bus_stop import BusStop
+from school_housing import SchoolHousing
 
 class Student(object):
     
@@ -43,18 +43,18 @@ class Student(object):
         schedule: Schedule
             the schedule of the student
             
-
-        
         cur_loc: tuple
             the location that the student located
             
         cur_dest: Institution (not included path)
-            either building, bus_stop, off_campus
-                
-                                
+            either building, bus_stop, ParkingArea, SchoolHousing, OffCampus
+                                      
         final_scheduled_dest: Institution
             the final destination of the student when they finished their schedule 
             either: parking area, bus_stop, Husky_village
+            
+        final_scheduled_loc: tuple
+            the final location of the student 
         
     """
 
@@ -71,20 +71,18 @@ class Student(object):
                 >= (PROPORTION_STARTING_AT_PARKING_AREA + PROPORTION_STARTING_AT_HUSKY_VILLAGE)):
             self.starting_area = BusStop
         else: 
-            self.starting_area = SchoolHousing
-            
+            self.starting_area = SchoolHousing            
         
-        self.schedule = Schedule(self.starting_area)
-                
-        
+        self.schedule = Schedule(self.starting_area)                
         self.starting_loc = (-1,-1) #tuple
         
 
         self.cur_dest = schedule[0].Institution
         self.cur_loc = starting_loc
 
-        self.final_scheduled_dest = schedule[-1].Institution 
-    
+        self.final_scheduled_dest = self.starting_area
+        self.final_scheduled_loc = self.starting_loc
+        
     
     
     
@@ -100,5 +98,9 @@ class Student(object):
         
         return the location of the cloest door 
         """
-        
+    
+    def isNextToInfected(self):
+        """
+        Determine whether the student is next to an infected student
+        """
     
