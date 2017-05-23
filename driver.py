@@ -145,7 +145,7 @@ def create_institutions():
 
 
 
-def run_simulation(campus, cur_time):
+def run_simulation(campus, cur_time, all_students):
     '''Runs simulation 'total_steps' number of time steps. Displays visualization (animation).'''
 
     #TODO: increment day after the appropriate # of time steps.
@@ -164,10 +164,7 @@ def run_simulation(campus, cur_time):
         campus, cur_time = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time)
         visualizer = na.zeros((size_y, size_x, 3), 'f')
         for i in na.arange(1, size_x - 1):      # go through each cell except boundaries
-            for j in na.arange(1, size_y - 1):  #
-                #visualizer[j, i, 0:1] = campus[i, j, 1]    # 3rd dimension of campus[] is color.
-                #if campus[i, j, 1] < 1:
-                #    visualizer[j, i, :] -= campus[i, j, 0] * 5
+            for j in na.arange(1, size_y - 1):
                 if campus[i, j, 0] == 0:    # CampusOutdoors
                     visualizer[j, i, 0] = 0
                     visualizer[j, i, 1] = 1 # green
@@ -181,7 +178,18 @@ def run_simulation(campus, cur_time):
                     visualizer[j, i, 1] = 1 # green
                     visualizer[j, i, 2] = 1
         for i in range(len(all_students)):  # Note: can use 1 - ratio to make redder
-            visualizer[all_students[i].y, all_students[i].x, :] = na.array([0, 1, 0])
+            if campus[all_students[i].x, all_students[i].y, 0] == 0: # If outdoors, we are going to color student grid
+                if campus[all_students[i].x, all_students[i].y, 1] != 0 \
+                        and campus[all_students[i].x, all_students[i].y, 2] != 0:
+                    ratio = campus[all_students[i].x, all_students[i].y, 1] / \
+                            campus[all_students[i].x, all_students[i].y, 2]
+                    visualizer[all_students[i].y, all_students[i].x, :] = na.array([1, ratio, ratio])
+                elif campus[all_students[i].x, all_students[i].y, 1] == 0 and \
+                        campus[all_students[i].x, all_students[i].y, 2] != 0:
+                    visualizer[all_students[i].y, all_students[i].x, :] = na.array([1, 0, 0])
+                elif campus[all_students[i].x, all_students[i].y, 1] != 0 and \
+                        campus[all_students[i].x, all_students[i].y, 2] == 0:
+                    visualizer[all_students[i].y, all_students[i].x, :] = na.array([1, 1, 1])
 
         result.set_data(visualizer)
         plt.draw()
@@ -209,4 +217,4 @@ all_students = create_students(TOTAL_STUDENTS)
 INSTITUTION_INT_MAP = {}
 create_institutions()
 
-run_simulation(campus, cur_time)
+run_simulation(campus, cur_time, all_students)
