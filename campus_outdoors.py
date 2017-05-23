@@ -1,18 +1,16 @@
 #==============================================================================
-# OffCampus class
+# Institution class
 #
 # Author: Zhiming Zhong
 # May 2017
 #==============================================================================
 
-
 from institution import Institution
 
-class OffCampus(object):
-    """Create and manage an off-campus institution. 
-    An institution is any type of environment to which students can be assigned 
+class CampusOutdoors(Institution):
+    """Create and manage a path. An institution is any type of environment to which students can be assigned 
     for the duration of a time interval in the simulation.
-    
+            
     Attributes
     ----------
     name : string 
@@ -23,12 +21,8 @@ class OffCampus(object):
         
     posn : tuple
         describes the physical boundaries of the institution, in this form: (x_min, x_max, y_min, y_max)
-        
-    door_posns: list of tuples
-        each tuple is the x, y position of a door to the institution.
 
     """
 
-    def __init__(self, name, infec_prob=0.0, posn=(0,0,0,0), door_posns = []):
+    def __init__(self, name, infec_prob=0.0, posn=(0,0,0,0)):
         Institution.__init__(self, name, infec_prob, posn)
-        self.door_posns = door_posns

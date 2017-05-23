@@ -13,22 +13,18 @@ class Institution(object):
 
     Attributes
     ----------
-    type : string 
-        type of institution 
-
+    name: string
+        name of institution
+        
     infection_probability : float
         probability that a susceptible student in this institution would be infected by an adjacent infected student.
         
-    geographical_loc : tuple
+    posn : tuple
         describes the physical boundaries of the institution, in this form: (x_min, x_max, y_min, y_max)
-        
-    list_students : List
-        contains all students currently in the institution
         
     """
 
-    def __init__(self, type='institution', infection_probability=0.0, geographical_loc=(0,0,0,0), list_students=[]):
-        self.type = type
+    def __init__(self, name, infection_probability=0.0, posn=(0,0,0,0)):
+        self.name = name
         self.infection_probability = infection_probability
-        self.geographical_loc = geographical_loc
-        self.list_students = list_students
+        self.posn = posn
