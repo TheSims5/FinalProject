@@ -1,67 +1,34 @@
 import numpy as n
 from activity import Activity
 
-'''   Docstring
-   This Schedule class will contain information of many schedule for the agent to behave
-   Each schedule recorded in this class has a certain chance to be behaved
-   There are variables to determine the starting time or ending time of each schedule
-'''
+
+class ScheduleList(object):
 
 
-class ScheduleList(Object):
+    all_activities = []             # list of all Actvities
+    activities_community_map = {}   # map from int community to a list of activites that community can participate in.
 
 
-    '''
-    COMMUNITY_INT_MAP = {1: "PRE_MAJOR_PROG",
-                         2: "BUSINESS",
-                         3: "STEM",
-                         4: "NURSING_AND_HEALTH",
-                         5: "INTER_ART_AND_SCIENCE",
-                         6: "EDUCATIONAL",
-                         7: "INTERACTIVE_MEDIA"}
-    '''
+    def __init__(self, community):
+        self.schedules = [[],[],[],[],[]]
+        self.community = community
+
+        # Class in discovery hall, 1:15 - 3:15pm (start walking at 12:40)
+        class1 = Activity(start_time=13 * 60 - 20, end_time=15.25 * 60, dest_intitution_int=1)
+
+        # Class in uwbb, 3:30 - 5:30 (start walking at 3:15)
+        class2 = Activity(start_time=15.25 * 60, end_time= 17.5 * 60, dest_intitution_int=6)
+
+        # Go to the parking area 1. (from 5:30pm to 11:59pm)
+        going_home = Activity(start_time=17.5 * 60, end_time= 23 * 60 + 59, dest_intitution_int=11)
 
 
+        self.schedules[0].append(class1)
+        self.schedules[0].append(class2)
+        self.schedules[0].append(going_home)
 
 
-    COURSES =
-    {0:   , \
-     1:   , \
+s = ScheduleList(1)
 
-
-
-
-
-            }
-
-
-    # In second dimension, first variable means the number of the building
-    # second variable means the starting time
-    # third variable means the ending time
-    # forth variable means the probability
-    def __init__(self, length):
-        self.size = 0
-        self.list = n.zeros((length, 4))
-
-    # The time will stored in decimal with floating number. For example, 17:38 means 17.38 in this function
-    def increase_schedule(self, objective_building, starting_time, ending_time, probability):
-        self.list[self.size, 0] = objective_building
-        self.list[self.size, 1] = starting_time
-        self.list[self.size, 2] = ending_time
-        self.list[self.size, 3] = probability
-        self.size += 1
-
-    # You will be able to read any schedule by its index
-    def get_activity(self, index):
-        return self.list[index, 0], self.list[index, 1], self.list[index, 2], self.list[index, 3]
-
-
-
-
-
-
-
-
-
-
-
+for activ in s.schedules[0]:
+    activ.display()
