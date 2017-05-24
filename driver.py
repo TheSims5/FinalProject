@@ -15,20 +15,8 @@ from parking_area import ParkingArea
 from student_housing import StudentHousing
 from campus_outdoors import CampusOutdoors
 
-#TODO Uncomment to integrate actual Student class:
-# from student import Student
 
-
-#TODO: REMOVE Student class stub: -------
-class Student:
-
-    def __init__(self):
-        self.x = 0
-        self.y = 0
-        return
-
-    def move(self, grid):
-        return grid
+from student import Student
 
 
 def create_grid(size_x, size_y):
@@ -81,7 +69,8 @@ def create_students(num_of_students):
 def simulate_one_step(grid, students, total_students, current_time_period):
     ''' One time period simulator'''
     for i in range(total_students):
-        grid = students[i].move(grid)
+        grid = students[i].move(grid, INSTITUTION_INT_MAP, cur_day, cur_time, DT, size_x, size_y)
+
 
     current_time_period += 1
     return grid, current_time_period
@@ -100,7 +89,7 @@ def create_institutions():
     uwbb =          Building(name= 'uwbb',infec_prob=0.0, posn=[1590, 1686, 330, 400], door_posns=[[1630, 400]])
     arc =           Building(name= 'arc',infec_prob=0.0, posn=[665, 711, 569, 633], door_posns=[[711,585]])
     subway =        Building(name= '',infec_prob=0.0, posn=[604, 620, 432, 468], door_posns=[[611, 470]])
-    bus_stop =      BusStop(name= 'bus_stop',infec_prob=0.0, posn=[1070, 1144, 340, 447])
+    bus_stop =      BusStop(name= 'bus_stop',infec_prob=0.0, posn=[1070, 1144, 340, 447], door_posns=[[1144, 340]])
     husky_village = StudentHousing(name= 'husky_village',infec_prob=0.0, posn=[1290, 1390, 160, 300], door_posns=[[1290, 160], [1390, 160], [1390, 300]])
     parking_area_1 =ParkingArea(name= 'parking_area_1',infec_prob=0.0, posn=[467, 674, 155, 215], door_posns=[[590, 215]])
     parking_area_2 =ParkingArea(name= 'parking_area_2',infec_prob=0.0, posn=[100, 300, 32, 525], door_posns=[[300,395]])
@@ -161,6 +150,10 @@ def run_simulation(campus, cur_time, all_students):
     campus, cur_time = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time)
 
     for h in range(TOTAL_STEPS):
+
+        #REMOVE
+        print(cur_time)
+
         campus, cur_time = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time)
         visualizer = na.zeros((size_y, size_x, 3), 'f')
         for i in na.arange(1, size_x - 1):      # go through each cell except boundaries
@@ -178,18 +171,25 @@ def run_simulation(campus, cur_time, all_students):
                     visualizer[j, i, 1] = 1 # green
                     visualizer[j, i, 2] = 1
         for i in range(len(all_students)):  # Note: can use 1 - ratio to make redder
-            if campus[all_students[i].x, all_students[i].y, 0] == 0: # If outdoors, we are going to color student grid
-                if campus[all_students[i].x, all_students[i].y, 1] != 0 \
-                        and campus[all_students[i].x, all_students[i].y, 2] != 0:
-                    ratio = campus[all_students[i].x, all_students[i].y, 1] / \
-                            campus[all_students[i].x, all_students[i].y, 2]
-                    visualizer[all_students[i].y, all_students[i].x, :] = na.array([1, ratio, ratio])
-                elif campus[all_students[i].x, all_students[i].y, 1] == 0 and \
-                        campus[all_students[i].x, all_students[i].y, 2] != 0:
-                    visualizer[all_students[i].y, all_students[i].x, :] = na.array([1, 0, 0])
-                elif campus[all_students[i].x, all_students[i].y, 1] != 0 and \
-                        campus[all_students[i].x, all_students[i].y, 2] == 0:
-                    visualizer[all_students[i].y, all_students[i].x, :] = na.array([1, 1, 1])
+            if campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 0] == 0: # If outdoors, we are going to color student grid
+                if campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] != 0 \
+                        and campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] != 0:
+                    ratio = campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] / \
+                            campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2]
+                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, ratio, ratio])
+                elif campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] == 0 and \
+                        campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] != 0:
+                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 0, 0])
+                elif campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] != 0 and \
+                        campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] == 0:
+                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 1, 1])
+
+
+        cur_time += DT
+
+        if cur_time == 60 * 24:
+            cur_day += 1
+
 
         result.set_data(visualizer)
         plt.draw()
@@ -201,11 +201,11 @@ def run_simulation(campus, cur_time, all_students):
 
 DT = 5                  # adjustable. Unit: minutes.
 MINS_PER_DAY = 60.0 * 24
-TOTAL_STUDENTS = 5000   # adjustable
+TOTAL_STUDENTS = 10  # adjustable
 TOTAL_STEPS = int(MINS_PER_DAY / DT * 5)   # simulate 5 days. Each day has MINUTES_PER_DAY / DT time steps.
 cur_time = 0            # current time, in minutes. (e.g. 601 == 10:01 a.m.)
 cur_step = 0
-cur_day = 0             # 1st day == day 0.
+cur_day = 1             # 1st day == day 0.
 
 orig_img_size_y = 800   # height of image (in pixels) used to determine all institution coordinates
 size_x = 330            # width of grid

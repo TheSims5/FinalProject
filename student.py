@@ -11,7 +11,8 @@
 
 import numpy as np
 import random
-from schedule import Schedule
+import math
+from schedule_list import ScheduleList
 from parking_area import ParkingArea
 from bus_stop import BusStop
 from student_housing import StudentHousing
@@ -124,7 +125,7 @@ class Student(object):
         else:
             self.community = 7
             
-        self.schedule_list = Schedule(self.community)  
+        self.schedule_list = ScheduleList(self.community)
 
         self.next_sched_item = 0
         
@@ -133,21 +134,23 @@ class Student(object):
 
         random_num_for_starting_area = np.random.random()
         if (random_num_for_starting_area < STARTING_POSITION_ARRAY[0]):
-            self.starting_institution = 1
+            self.starting_institution = 11
             #ParkingArea
             
         elif (random_num_for_starting_area >= STARTING_POSITION_ARRAY[0]
             and random_num_for_starting_area < STARTING_POSITION_ARRAY[1]):
-            self.starting_institution = 2
+            self.starting_institution = 10
             #StudentHousing
             
         else:
-            self.starting_institution = 3
+            self.starting_institution = 9
             #BusStop
-        self.cur_institution = self.starting_institution            
-        
-        
-        self.cur_dest_institution = self.schedule_list[0][0].dest_institution_int
+        self.cur_institution = self.starting_institution
+
+
+        print("starting_insti: " + str(self.starting_institution))
+
+        self.cur_dest_institution = self.schedule_list.schedules[0][0].dest_institution_int
         self.cur_dest_posn = (-1,-1)
         
         
@@ -159,40 +162,20 @@ class Student(object):
         self.virus = None                        
         self.final_infec_prob = self.assigned_infec_prob                                                
 
-        print(self.community)    
 
 
-# 
-#         elif (random_num_for_starting_area 
-#                 >= (PROPORTION_STARTING_AT_PARKING_AREA + PROPORTION_STARTING_AT_HUSKY_VILLAGE)):
-#             self.starting_area = BusStop
-#         else: 
-#             self.starting_area = SchoolHousing            
-        
-              
-#         self.starting_loc = (-1,-1) #tuple
-#         
-#         self.cur_dest = 
-# 
-#         self.cur_dest = schedule[0].Institution
-#         self.cur_loc = starting_loc
-# 
-#         self.final_scheduled_dest = self.starting_area
-#         self.final_scheduled_loc = self.starting_loc
-
-        
-    """
-    Get the cloest door of the current destination 
-    
-    
-    Calculate based on the current location(cur_loc) and the current destination(cur_dest)
-        of the student  
-    get the door location (door_locs) of the cur_dest
-    then, calculate the distance between cur_loc and the dor_locs
-    
-    return the location of the cloest door (tuple) 
-    """
     def get_closest_door_of_cur_dest(self, institution_int_map):
+        """
+        Get the cloest door of the current destination 
+
+        Calculate based on the current location(cur_loc) and the current destination(cur_dest)
+            of the student  
+        get the door location (door_locs) of the cur_dest
+        then, calculate the distance between cur_loc and the dor_locs
+
+        return the location of the cloest door (tuple) 
+        """
+
         cur_x = self.cur_posn[0]
         cur_y = self.cur_posn[1]
         
@@ -212,7 +195,7 @@ class Student(object):
         # return cur_dest_posn
         
                     
-    def calc_final_infec_prob(self, num_infected, num_total):
+    def calc_final_infec_prob(self, num_infected, num_total, institution_int_map):
         """ 
         calculate final_infec_probab 
         if final_infec_probab >= np.random.random():
@@ -220,13 +203,16 @@ class Student(object):
         """
         self.final_infec_prob = (num_infected/num_total)\
                                 * self.time_spent_in_cur_institution \
-                                * self.cur_institution.infect_prob \
+                                * institution_int_map[self.cur_institution].infec_prob \
                                 * Virus.DEFAULT_PROB \
                                 * self.assigned_infec_prob
         # final_infec_prob = 
     
-    def move(self, grid, institution_int_map, day, time, dt):
-        
+    def move(self, grid, institution_int_map, day, time, dt, x_max, y_max):
+
+
+        #REMOVE
+        print("student cur pos: " + str(self.cur_posn))
         
         # increment the time_spent_in_cur_institution
         self.time_spent_in_cur_institution = self.time_spent_in_cur_institution + dt
@@ -245,46 +231,20 @@ class Student(object):
         # check the cur_end_time for the current schedule item
         # if the activity is not end 
         # the student do not need to move
-        cur_end_time = self.schedule_list[day-1][self.next_sched_item-1].end_time
+        cur_end_time = self.schedule_list.schedules[day-1][self.next_sched_item].start_time
         
         # if the student is arrived:
-        if time <= cur_end_time:
-            if self.cur_institution == self.schedule_list[day-1][self.next_sched_item-1].dest_institution_int:
+        if self.cur_posn == (-1, -1):
+            self.get_closest_door_of_cur_dest(institution_int_map)
+            self.cur_posn = self.cur_dest_posn
+            moved_Complete = True
+            if is_infected:
+                grid[self.cur_posn[0], self.cur_posn[1], 1] = grid[self.cur_posn[0], self.cur_posn[0], 1] + 1
+            else:
+                grid[self.cur_posn[0], self.cur_posn[1], 2] = grid[self.cur_posn[0], self.cur_posn[0], 2] + 1
+        elif time < cur_end_time:
+            if self.cur_institution == self.schedule_list.schedules[day-1][self.next_sched_item-1].dest_institution_int:
                 moved_Complete = True
-                
-        
-        
-        
-        # if the student is not at the CampusOutdoors
-        # see how many students are infected in that institution
-        if self.cur_dest_institution!=0:
-            doors = institution_int_map[self.cur_dest_institution].door_posns
-            num_infected = 0        
-            for door in doors:
-                num_infected = num_infected + grid[door[0],door[1],2]
-        # if the student is at the CampusOutdoors, 
-        # Number of infected is equal to how many infected student at that position (coordinate)
-        else:
-            num_infected = grid[self.cur_posn[0],self.cur_posn[1],2] 
-            
-                          
-        num_total = num_infected + grid[self.cur_posn[0], self.cur_posn[1],1]
-        
-
-        # if the student is not infected:
-        # calculate the final infection probability
-        if not is_infected:
-            self.calc_final_infec_prob(num_infected, num_total)
-            
-
-        # a random number generated to determined whether the student will be infected
-        random_for_infected = np.random.random()
-        if random_for_infected >= self.final_infec_prob:
-            self.virus = Virus()
-            grid[self.cur_posn[0],self.cur_posn[0],2] = grid[self.cur_posn[0],self.cur_posn[0],2]+1
-            grid[self.cur_posn[0],self.cur_posn[0],1] = grid[self.cur_posn[0],self.cur_posn[0],1]-1
-            
-        
 
 
         if not moved_Complete:
@@ -292,16 +252,16 @@ class Student(object):
             
             # Assume: day starts at 1
             # then see how many activity a student has in that day
-            len_of_schedule_of_the_day = len(self.schedule_list[day-1])
+            len_of_schedule_of_the_day = len(self.schedule_list.schedules[day-1])
     
     
-            # next_dest_institution = self.schedule_list[day-1][next_sched_item]
+            # next_dest_institution = self.schedule_list.schedules[day-1][next_sched_item]
             # set the cur_dest_institution
             # the student reach the last activity item
             if self.next_sched_item < len_of_schedule_of_the_day:
-                self.cur_dest_institution = self.schedule_list[day-1][self.next_sched_item].dest_institution_int     
+                self.cur_dest_institution = self.schedule_list.schedules[day-1][self.next_sched_item].dest_institution_int
             else:
-                self.cur_dest_institution = self.schedule_list[day-1][-1].dest_institution_int 
+                self.cur_dest_institution = self.schedule_list.schedules[day-1][-1].dest_institution_int
             
                                                                 
             # will update the self.cur_dest_posn                                                                                                                           
@@ -312,198 +272,99 @@ class Student(object):
             temp_posn_E = []
             temp_posn_S = []
             temp_posn_W = []
-            # randomly pick an int to determine which direction should go next
-            # 1: North, 2: East, 3: South, 4: West
-            temp_next_step = np.random.randint(1,5)
-            available_dimensions = []
-            
-            
-            if temp_next_step == 1:
-                temp_posn_N.append(self.cur_posn[0])
-                temp_posn_N.append(self.cur_posn[1]-1)
-                available_dimensions.append(temp_posn_N)
-                if temp_posn_N[0] == self.cur_dest_posn[0] and temp_posn_N[1] == self.cur_dest_posn[1]:
-                    moved_Complete = True
-                    self.cur_posn = self.cur_dest_posn
-                    self.cur_institution = self.cur_dest_institution
-                    self.next_sched_item = self.next_sched_item + 1
-                    self.time_spent_in_cur_institution = 0
-                    
-                    if is_infected:
-                        grid[self.cur_posn[0],self.cur_posn[1],2] = grid[self.cur_posn[0],self.cur_posn[0],2]-1
-                        grid[self.cur_dest_posn[0],self.cur_dest_posn[1],2] = grid[self.cur_dest_posn[1],self.cur_dest_posn[0],2]+1
-                    else:
-                        grid[self.cur_posn[0],self.cur_posn[1],1] = grid[self.cur_posn[0],self.cur_posn[0],1]-1
-                        grid[self.cur_dest_posn[0],self.cur_dest_posn[1],1] = grid[self.cur_dest_posn[1],self.cur_dest_posn[0],1]+1
-                        
-    
-    
-            if temp_next_step == 2:
-                temp_posn_E.append(self.cur_posn[0]+1)
-                temp_posn_E.append(self.cur_posn[1])
-                available_dimensions.append(temp_posn_E)
-                if temp_posn_E[0] == self.cur_dest_posn[0] and temp_posn_E[1] == self.cur_dest_posn[1]:
-                    moved_Complete = True
-                    self.cur_posn = self.cur_dest_posn
-                    self.cur_institution = self.cur_dest_institution
-                    self.next_sched_item = self.next_sched_item + 1
-                    self.time_spent_in_cur_institution = 0
-                    
-                    # update the grid based on whether the student is infected
-                    if is_infected:
-                        grid[self.cur_posn[0],self.cur_posn[1],2] = grid[self.cur_posn[0],self.cur_posn[1],2]-1
-                        grid[self.cur_dest_posn[0],self.cur_dest_posn[0],2] = grid[self.cur_dest_posn[0],self.cur_dest_posn[1],2]+1
-                    else:
-                        grid[self.cur_posn[0],self.cur_posn[1],1] = grid[self.cur_posn[0],self.cur_posn[0],1]-1
-                        grid[self.cur_dest_posn[0],self.cur_dest_posn[1],1] = grid[self.cur_dest_posn[0],self.cur_dest_posn[1],1]+1
-    
-    
-            if temp_next_step == 3:
-                temp_posn_S.append(self.cur_posn[0])
-                temp_posn_S.append(self.cur_posn[1]+1)
-                available_dimensions.append(temp_posn_S)
-                if temp_posn_S[0] == self.cur_dest_posn[0] and temp_posn_S[1] == self.cur_dest_posn[1]:
-                    moved_Complete = True
-                    self.cur_posn = self.cur_dest_posn
-                    self.cur_institution = self.cur_dest_institution
-                    self.next_sched_item = self.next_sched_item + 1
-                    self.time_spent_in_cur_institution = 0
-                    
-                    if is_infected:
-                        grid[self.cur_posn[0],self.cur_posn[1],2] = grid[self.cur_posn[0],self.cur_posn[1],2]-1
-                        grid[self.cur_dest_posn[0],self.cur_dest_posn[1],2] = grid[self.cur_dest_posn[0],self.cur_dest_posn[1],2]+1
-                    else:
-                        grid[self.cur_posn[0],self.cur_posn[1],1] = grid[self.cur_posn[0],self.cur_posn[1],1]-1
-                        grid[self.cur_dest_posn[0],self.cur_dest_posn[1],1] = grid[self.cur_dest_posn[0],self.cur_dest_posn[1],1]+1
-    
-                    
-            if temp_next_step == 4:
-                temp_posn_W.append(self.cur_posn[0]-1)
-                temp_posn_W.append(self.cur_posn[1])
-                available_dimensions.append(temp_posn_W)
-    
-                if temp_posn_W[0] == self.cur_dest_posn[0] and temp_posn_W[1] == self.cur_dest_posn[1]:
-                    moved_Complete = True
-                    self.cur_posn = self.cur_dest_posn
-                    self.cur_institution = self.cur_dest_institution
-                    self.next_sched_item = self.next_sched_item + 1
-                    self.time_spent_in_cur_institution = 0
-                    
-                    if is_infected:
-                        grid[self.cur_posn[0],self.cur_posn[1],2] = grid[self.cur_posn[0],self.cur_posn[1],2]-1
-                        grid[self.cur_dest_posn[0],self.cur_dest_posn[1],2] = grid[self.cur_dest_posn[0],self.cur_dest_posn[1],2]+1
-                    else:
-                        grid[self.cur_posn[0],self.cur_posn[1],1] = grid[self.cur_posn[0],self.cur_posn[1],1]-1
-                        grid[self.cur_dest_posn[0],self.cur_dest_posn[1],1] = grid[self.cur_dest_posn[0],self.cur_dest_posn[1],1]+1
-    
-               
-                    
+
+
+            temp_posn_N.append(self.cur_posn[0])
+            temp_posn_N.append(self.cur_posn[1] - 1)
+
+            temp_posn_E.append(self.cur_posn[0] + 1)
+            temp_posn_E.append(self.cur_posn[1])
+
+            temp_posn_S.append(self.cur_posn[0])
+            temp_posn_S.append(self.cur_posn[1] + 1)
+
+            temp_posn_W.append(self.cur_posn[0] - 1)
+            temp_posn_W.append(self.cur_posn[1])
+
+            available_temp_posns = []
+            for temp_posn in [temp_posn_N, temp_posn_E, temp_posn_S, temp_posn_W]:
+                if temp_posn[0] >0 and temp_posn[0]<x_max:
+                    if temp_posn[1]>0 and temp_posn[1]<y_max:
+                        if grid[temp_posn[0], temp_posn[1], 0] == 0:
+                            available_temp_posns.append(temp_posn)
+
+            for posn in available_temp_posns:
+                if posn[0] == self.cur_dest_posn[0] and posn[1] == self.cur_dest_posn[1]:
+                    moved_Complete = move_to_cur_dest(self, grid, is_infected, moved_Complete)
+                    if moved_Complete: break
+
+
                               
             if not moved_Complete:
-            # check whether the temp_next_posn is a Campus Outdoor
-            # set the available_dimensions to -1 if it is not a valid dimension
-                if grid[temp_posn_N[0], temp_posn_N[1],0]!=0:
-                    available_dimensions[0] = -1
-                    
-                if grid[temp_posn_E[0], temp_posn_E[1],0]!=0:
-                    available_dimensions[1] = -1
-                    
-                if grid[temp_posn_S[0], temp_posn_S[1],0]!=0:
-                    available_dimensions[2] = -1
-                    
-                if grid[temp_posn_W[0], temp_posn_W[1],0]!=0:
-                    available_dimensions[3] = -1
-        
-                temp_distance = [0,0,0,0]
-                for i in range(4):
-                    if available_dimensions[i]!=-1:
-                        temp_distance[i] = self.calculate_temp_distance(available_dimensions[i])
-                    else: 
-                        temp_distance[i] = -1
-                        
-                min_distance = max(temp_distance)
+
+                temp_distance = []
+                for i in range(len(available_temp_posns)):
+                    # if available_dimensions[i]!=-1:
+                    temp_distance.append(self.calculate_temp_distance(available_temp_posns[i]))
+                    # else:
+                    #     temp_distance[i] = -1
+
+
+
+
+
+                min_distance = min(temp_distance)
+
+                indexes_of_posns_min_dist_away = []
+
+
+                for i in range(len(temp_distance)):
+                    if np.isclose(temp_distance[i], min_distance, rtol=1e-05, atol=1e-08, equal_nan=False):
+                        indexes_of_posns_min_dist_away.append(i)
+
+
+                np.random.shuffle(indexes_of_posns_min_dist_away)
+
+                next_step = indexes_of_posns_min_dist_away[0]
                 
-                for i in range(4):
-                    if temp_distance[i] != -1:
-                        if temp_distance[i] < min_distance:
-                            min_distance = temp_distance[i]
-                
-                min_distance_array = np.array(min_distance)
-                masked_distance = np.ma.masked_greater(min_distance_array, min_distance)
-                
-                available_dimensions = []
-                for i in range(4):
-                    if masked_distance[i]:
-                        available_dimensions.append[i]
-                
-                next_step = random.shuffle(available_dimensions)[0]
-                
-                
-                
-                
-                # the next step will move to North
-                if next_step == 0:                
-                    # cur_institution, next_sched_item : no need to change
-                    self.cur_institution = self.cur_institution
-                    self.next_sched_item = self.next_sched_item
-    
-                    if is_infected:
-                        grid[self.cur_posn[0],self.cur_posn[1],2] = grid[self.cur_posn[0],self.cur_posn[1],2]-1
-                        grid[temp_posn_N[0],temp_posn_N[1],2] = grid[temp_posn_N[1],temp_posn_N[1],2]+1
-                    else:
-                        grid[self.cur_posn[0],self.cur_posn[1],1] = grid[self.cur_posn[0],self.cur_posn[1],1]-1
-                        grid[temp_posn_N[0],temp_posn_N[1],1] = grid[temp_posn_N[1],temp_posn_N[1],1]+1
-                    self.cur_posn = tuple(temp_posn_N)    
-                            
-                if next_step == 1:                
-                    # cur_institution, next_sched_item : no need to change
-                    self.cur_institution = self.cur_institution
-                    self.next_sched_item = self.next_sched_item
-    
-                    if is_infected:
-                        grid[self.cur_posn[0],self.cur_posn[1],2] = grid[self.cur_posn[0],self.cur_posn[1],2]-1
-                        grid[temp_posn_E[0],temp_posn_E[1],2] = grid[temp_posn_E[1],temp_posn_E[1],2]+1
-                    else:
-                        grid[self.cur_posn[0],self.cur_posn[1],1] = grid[self.cur_posn[0],self.cur_posn[1],1]-1
-                        grid[temp_posn_E[0],temp_posn_E[1],1] = grid[temp_posn_E[1],temp_posn_E[1],1]+1
-                    self.cur_posn = tuple(temp_posn_E)
-                            
-                if next_step == 2:                
-                    # cur_institution, next_sched_item : no need to change
-                    self.cur_institution = self.cur_institution
-                    self.next_sched_item = self.next_sched_item
-    
-                    if is_infected:
-                        grid[self.cur_posn[0],self.cur_posn[1],2] = grid[self.cur_posn[0],self.cur_posn[1],2]-1
-                        grid[temp_posn_S[0],temp_posn_S[1],2] = grid[temp_posn_S[1],temp_posn_S[1],2]+1
-                    else:
-                        grid[self.cur_posn[0],self.cur_posn[1],1] = grid[self.cur_posn[0],self.cur_posn[1],1]-1
-                        grid[temp_posn_S[0],temp_posn_S[1],1] = grid[temp_posn_S[1],temp_posn_S[1],1]+1
-                    self.cur_posn = tuple(temp_posn_S)           
-                
-                if next_step == 3:                
-                    # cur_institution, next_sched_item : no need to change
-                    self.cur_institution = self.cur_institution
-                    self.next_sched_item = self.next_sched_item
-    
-                    if is_infected:
-                        grid[self.cur_posn[0],self.cur_posn[1],2] = grid[self.cur_posn[0],self.cur_posn[1],2]-1
-                        grid[temp_posn_W[0],temp_posn_W[1],2] = grid[temp_posn_W[1],temp_posn_W[1],2]+1
-                    else:
-                        grid[self.cur_posn[0],self.cur_posn[1],1] = grid[self.cur_posn[0],self.cur_posn[1],1]-1
-                        grid[temp_posn_W[0],temp_posn_W[1],1] = grid[temp_posn_W[1],temp_posn_W[1],1]+1
-                    self.cur_posn = tuple(temp_posn_W)                  
-                        
+                final_next_posn = available_temp_posns[next_step]
+
+                # cur_institution, next_sched_item : no need to change
+                self.cur_institution = self.cur_institution
+                self.next_sched_item = self.next_sched_item
+
+                if is_infected:
+                    grid[self.cur_posn[0], self.cur_posn[1], 2] = grid[self.cur_posn[0], self.cur_posn[1], 2] - 1
+                    grid[final_next_posn[0], final_next_posn[1], 2] = grid[final_next_posn[1], final_next_posn[1], 2] + 1
+                else:
+                    grid[self.cur_posn[0], self.cur_posn[1], 1] = grid[self.cur_posn[0], self.cur_posn[1], 1] - 1
+                    grid[final_next_posn[0], final_next_posn[1], 1] = grid[final_next_posn[1], final_next_posn[1], 1] + 1
+                self.cur_posn = tuple(final_next_posn)
+
         return grid
-    
+
+
+    def move_to_cur_dest(self, grid, is_infected):
+        moved_Complete = True
+        self.cur_posn = self.cur_dest_posn
+        self.cur_institution = self.cur_dest_institution
+        self.next_sched_item = self.next_sched_item + 1
+        self.time_spent_in_cur_institution = 0
+
+        if is_infected:
+            grid[self.cur_posn[0], self.cur_posn[1], 2] = grid[self.cur_posn[0], self.cur_posn[0], 2] - 1
+            grid[self.cur_dest_posn[0], self.cur_dest_posn[1], 2] = grid[self.cur_dest_posn[1], self.cur_dest_posn[
+                0], 2] + 1
+        else:
+            grid[self.cur_posn[0], self.cur_posn[1], 1] = grid[self.cur_posn[0], self.cur_posn[0], 1] - 1
+            grid[self.cur_dest_posn[0], self.cur_dest_posn[1], 1] = grid[self.cur_dest_posn[1], self.cur_dest_posn[
+                0], 1] + 1
+
+        return moved_Complete
+
+
     def calculate_temp_distance(self, loc):
         cur_x = self.cur_posn[0]
         cur_y = self.cur_posn[1]
         distance = ((cur_x-loc[0])**2 + (cur_y-loc[1])**2)**0.5
         return distance
-
-    # def isNextToInfected(self):
-    #     """
-    #     Determine whether the student is next to an infected student
-    #     """
-# print(Student().community)

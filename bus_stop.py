@@ -26,9 +26,18 @@ class BusStop(Institution):
     door_posns: list of tuples
         each tuple is the x, y position of a door to the institution.
         
-        
+
 
     """
+
+    def __init__(self, name, infec_prob=0.0, posn=(0,0,0,0), door_posns = []):
+        Institution.__init__(self, name, infec_prob, posn)
+        self.door_posns = door_posns
+
+
+
+
+
 
     def __init__(self, name, infec_prob=0.0, posn=(0,0,0,0), door_posns = []):
         Institution.__init__(self, name, infec_prob, posn)

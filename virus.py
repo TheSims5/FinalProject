@@ -10,6 +10,8 @@ import numpy as np
 class Virus(object):
     """Create and manage a virus.
 
+
+    
     Attributes
     ----------
     probability: float 
@@ -40,6 +42,8 @@ class Virus(object):
         Factor to boost to infection probability
 
     """
+
+    DEFAULT_PROB = 0.2
     
     
     def __init__(self, probability=0.5, incubation_period=2, infecting_starts=0,infecting_ends=-1, \

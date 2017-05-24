@@ -24,7 +24,7 @@ class Institution(object):
         
     """
 
-    def __init__(self, name, infection_probability=0.0, posn=(0,0,0,0)):
+    def __init__(self, name, infec_prob=0.0, posn=(0,0,0,0)):
         self.name = name
-        self.infection_probability = infection_probability
+        self.infec_prob = infec_prob
         self.posn = posn
