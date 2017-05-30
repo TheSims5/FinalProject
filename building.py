@@ -7,6 +7,7 @@
 
 
 from institution import Institution
+from classroom import Classroom
 
 class Building(Institution):
     """Create and manage an institution of the type "building." 
@@ -41,3 +42,4 @@ class Building(Institution):
         self.door_posns = door_posns
         self.opening_time = opening_time
         self.closing_time = closing_time
+        self.classrooms=[]
