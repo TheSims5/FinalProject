@@ -496,6 +496,7 @@ x_offset = 290
 y_offset = 205
 DT = 10               # Unit: minutes.
 TOTAL_STUDENTS = 20
+CONTAGIOUS_STUDENTS = 100 #Number of contagious students
 cur_time = 500          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
 #----------------------------------------------------------------------------
 
