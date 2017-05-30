@@ -27,7 +27,17 @@ def create_grid(size_x, size_y):
         1st # is how many infected students occupy the cell, 
         2nd # is how many healthy students occopy the cell, 
         3rd # is temporarily set to 0 with no meaning.'''
-    grid = na.zeros(shape=(size_x, size_y, 3)) # [x_pos, y_pos, [institution number, # healthy, # infected]]
+
+    grid = na.zeros(shape=(size_x, size_y, 5))
+    # grid structure:
+    # [int xpos, int ypos,
+    #                      [int instit,
+    #                       # of healthy stud at cell,
+    #                       # of infected stud at cell,
+    #                       aerosol_infec_prob,
+    #                       surface_infec_prob]]
+
+
     #grid[0, :, :] = 3
     #grid[-1, :, :] = 3
     #grid[:, -1, :] = 3
