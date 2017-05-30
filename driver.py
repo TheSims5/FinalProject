@@ -64,8 +64,8 @@ def add_institution_to_grid(institution_int, grid):
             #print(grid)   #REMOVE.
 
     if institution.__class__.__name__ in ['Building', 'ParkingArea', 'BusStop']:
-        for door_posn in institution.door_posns:
-            grid[door_posn[0], door_posn[1], 0] = -1    # Institution doors.
+        #for door_posn in institution.door_posns:
+        #    grid[door_posn[0], door_posn[1], 0] = 0    # Institution doors.
 
         if institution.name in ['uw1', 'uw2', 'disc']:
             # Add classrooms to grid.
@@ -253,6 +253,13 @@ def run_simulation(campus, cur_time, all_students):
         campus = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time)
         visualizer = na.zeros((size_y, size_x, 3), 'f')
 
+        a = [1, 2, 3, 9, 11, 12]
+        for i in a:
+            temp_door_list = INSTITUTION_INT_MAP[i].door_posns
+            for j in range(len(temp_door_list)):
+                temp_door_x = temp_door_list[j][0]
+                temp_door_y = temp_door_list[j][1]
+                visualizer[temp_door_y, temp_door_x,:] = na.array([0, 0, 1])
 
         for i in na.arange(1, size_x - 1):      # go through each cell except boundaries
             for j in na.arange(1, size_y - 1):
@@ -262,10 +269,10 @@ def run_simulation(campus, cur_time, all_students):
                     visualizer[j, i, 0] = 1
                     visualizer[j, i, 1] = 1
                     visualizer[j, i, 2] = 1
-                elif campus[i, j, 0] == -1: # doors: cyan
-                    visualizer[j, i, 0] = 0
-                    visualizer[j, i, 1] = 0
-                    visualizer[j, i, 2] = 1
+                # elif campus[i, j, 0] == -1: # doors: cyan
+                #     visualizer[j, i, 0] = 0
+                #     visualizer[j, i, 1] = 0
+                #     visualizer[j, i, 2] = 1
 
                 elif campus[i, j, 0] == -2: # classroom borders: cyan
                     visualizer[j, i, 0] = 0
@@ -526,7 +533,7 @@ orig_img_size_x = orig_img_size_y * float(16) / 10
 #size_y = int(size_x/2.2)     # height of grid
 
 
-size_y = 300
+size_y = 600 - y_offset
 #size_y -= float(y_offset) * (float(size_y)/orig_img_size_y)
 size_y = int(size_y)
 size_x = size_y * float(16) / 10 # (Optimized for screen with aspect ratio 16:10)
