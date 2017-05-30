@@ -296,6 +296,9 @@ def create_students():
     students = []
     for i in range(TOTAL_STUDENTS):
         s1 = Student()
+        if i < CONTAGIOUS_STUDENTS:
+            s1.is_contagious = True
+            
         students.append(s1)
         rand_number = rand.randint(1,4)
         student_pick_Courses(s1, rand_number)
@@ -306,8 +309,10 @@ def create_students():
         s1.starting_posn[1] *= (float(size_y) / orig_img_size_y)
 
         s1.starting_posn[0] = int(s1.starting_posn[0])
-        s1.starting_posn[1] = int(s1.starting_posn[1])
+        s1.starting_posn[1] = int(s1.starting_posn[1])    
+        
 
+    
     return students
 
 
@@ -424,6 +429,7 @@ x_offset = 290
 y_offset = 205
 DT = 0.5                # Unit: minutes.
 TOTAL_STUDENTS = 2000
+CONTAGIOUS_STUDENTS = 100 #Number of contagious students
 cur_time = 500          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
 #----------------------------------------------------------------------------
 
