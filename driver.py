@@ -253,13 +253,7 @@ def run_simulation(campus, cur_time, all_students):
         campus = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time)
         visualizer = na.zeros((size_y, size_x, 3), 'f')
 
-        a = [1, 2, 3, 9, 11, 12]
-        for i in a:
-            temp_door_list = INSTITUTION_INT_MAP[i].door_posns
-            for j in range(len(temp_door_list)):
-                temp_door_x = temp_door_list[j][0]
-                temp_door_y = temp_door_list[j][1]
-                visualizer[temp_door_y, temp_door_x,:] = na.array([0, 0, 1])
+
 
         for i in na.arange(1, size_x - 1):      # go through each cell except boundaries
             for j in na.arange(1, size_y - 1):
@@ -303,7 +297,13 @@ def run_simulation(campus, cur_time, all_students):
                 #    visualizer[j, i, 1] = 0
                 #    visualizer[j, i, 2] = 1
 
-
+        a = [1, 2, 3, 9, 11, 12]
+        for i in a:
+            temp_door_list = INSTITUTION_INT_MAP[i].door_posns
+            for j in range(len(temp_door_list)):
+                temp_door_x = temp_door_list[j][0]
+                temp_door_y = temp_door_list[j][1]
+                visualizer[temp_door_y, temp_door_x,:] = na.array([0, 0, 1])
 
         for i in range(len(all_students) - 1, -1, -1):  # Note: can use 1 - ratio to make redder
 
@@ -330,16 +330,16 @@ def run_simulation(campus, cur_time, all_students):
 
 
 
-            cur_stud = all_students[0]
+            cur_stud = all_students[i]
 
             #if there's at least 1 infected student at this cell, color cell black.
             if campus[cur_stud.cur_posn[0], cur_stud. cur_posn[1], 2] > 0:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 0, 0])
-            else:
                 visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 0, 0])
+            else:
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 1 , 0])
 
-            #if cur_stud.is_contagious:
-            #    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 1, 1])
+            if cur_stud.is_contagious:
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 1, 1])
 
             '''
             if all_students[i].doing_random_walk:   #REMOVE
@@ -512,10 +512,10 @@ def student_pick_Courses(stud, num_of_class):
 # Adjustable-----------------------------------------------------------------
 x_offset = 290
 y_offset = 205
-DT = 1               # Unit: minutes.
-TOTAL_STUDENTS = 100
-CONTAGIOUS_STUDENTS = 100 #Number of contagious students
-cur_time = 500          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
+DT = 0.5             # Unit: minutes.
+TOTAL_STUDENTS = 200
+CONTAGIOUS_STUDENTS = 10 #Number of contagious students
+cur_time = 510          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
 #----------------------------------------------------------------------------
 
 
@@ -533,7 +533,7 @@ orig_img_size_x = orig_img_size_y * float(16) / 10
 #size_y = int(size_x/2.2)     # height of grid
 
 
-size_y = 600 - y_offset
+size_y = 250
 #size_y -= float(y_offset) * (float(size_y)/orig_img_size_y)
 size_y = int(size_y)
 size_x = size_y * float(16) / 10 # (Optimized for screen with aspect ratio 16:10)
