@@ -61,6 +61,7 @@ def add_institution_to_grid(institution_int, grid):
     for i in range(x_min, x_max+1):
         for j in range(y_min, y_max+1):
             grid[i, j, 0] = institution_int             # institutions
+            #print(grid)   #REMOVE.
 
     if institution.__class__.__name__ in ['Building', 'ParkingArea', 'BusStop']:
         for door_posn in institution.door_posns:
@@ -117,13 +118,14 @@ def create_institutions():
 
     # With new door posns. protruding from building walls.
     disc = Building(name='disc', infec_prob=0.0, posn=[528, 574, 256, 393],
-                    door_posns=[[575, 296], [576, 296], [575, 345], [576, 345],[565, 394], [565, 395],[527,345], [526,345]])  # , [528,345]
+                    door_posns=[[575, 296], [576, 296], [575, 345], [576, 345],[565, 394], [565, 395],[527,345], [526,345], \
+                                [555, 255 ], [555, 254 ] ] )  # , [528,345]
     uw1 = Building(name='uw1', infec_prob=0.0, posn=[364, 575, 478, 515],
                    door_posns=[[363, 496], [495, 477], [576, 493], [494, 516], [480, 516], \
                                [362, 496], [495, 476], [577, 493], [494, 517], [480, 517]])
     uw2 = Building(name='uw2', infec_prob=0.0, posn=[400, 527, 355, 393],
                    door_posns=[[399, 390], [429, 394], [433, 394], \
-                               [398, 390], [429, 395], [433, 395]])
+                               [398, 390], [429, 395], [433, 395], [520, 354], [520, 353], [410, 354], [410, 353],])
 
 
     lb1 =           Building(name= 'lb1',infec_prob=0.0, posn=[621, 752, 421, 470], door_posns=[[664,470]])
@@ -288,8 +290,15 @@ def run_simulation(campus, cur_time, all_students):
                         visualizer[j, i, 0] = 0
                         visualizer[j, i, 1] = 0
                         visualizer[j, i, 2] = 0
+                temp_a = campus[i, j, 3] + campus[i, j, 4]
+                #if temp_a != 0:
+                #    visualizer[j, i, 0] = temp_a / 1
+                #    visualizer[j, i, 1] = 0
+                #    visualizer[j, i, 2] = 1
 
-        for i in range(len(all_students)):  # Note: can use 1 - ratio to make redder
+
+
+        for i in range(len(all_students) - 1, -1, -1):  # Note: can use 1 - ratio to make redder
 
             # CampusOutdoors is colored white. (1, 1, 1)
             # Other Institutions are colored yellow. (Any institution with int > 0)  (1, 1, 0)
@@ -310,18 +319,20 @@ def run_simulation(campus, cur_time, all_students):
 
 
 
-            if all_students[i].doing_random_walk:  # REMOVE
+            #if all_students[i].doing_random_walk:  # REMOVE
 
 
 
-                cur_stud = all_students[0]
+            cur_stud = all_students[0]
 
-                #if there's at least 1 infected student at this cell, color cell black.
-                if campus[cur_stud.cur_posn[0], cur_stud. cur_posn[1], 2] > 0:
-                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 0, 0])
-                else:
-                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 0, 0])
+            #if there's at least 1 infected student at this cell, color cell black.
+            if campus[cur_stud.cur_posn[0], cur_stud. cur_posn[1], 2] > 0:
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 0, 0])
+            else:
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 0, 0])
 
+            #if cur_stud.is_contagious:
+            #    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 1, 1])
 
             '''
             if all_students[i].doing_random_walk:   #REMOVE
@@ -494,8 +505,8 @@ def student_pick_Courses(stud, num_of_class):
 # Adjustable-----------------------------------------------------------------
 x_offset = 290
 y_offset = 205
-DT = 10               # Unit: minutes.
-TOTAL_STUDENTS = 20
+DT = 1               # Unit: minutes.
+TOTAL_STUDENTS = 100
 CONTAGIOUS_STUDENTS = 100 #Number of contagious students
 cur_time = 500          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
 #----------------------------------------------------------------------------
