@@ -117,11 +117,13 @@ def create_institutions():
 
     # With new door posns. protruding from building walls.
     disc = Building(name='disc', infec_prob=0.0, posn=[528, 574, 256, 393],
-                    door_posns=[[575, 296], [575, 345], [565, 394]])  # , [528,345]
+                    door_posns=[[575, 296], [576, 296], [575, 345], [576, 345],[565, 394], [565, 395],[527,345], [526,345]])  # , [528,345]
     uw1 = Building(name='uw1', infec_prob=0.0, posn=[364, 575, 478, 515],
-                   door_posns=[[363, 496], [495, 477], [576, 493], [494, 516], [480, 516]])
+                   door_posns=[[363, 496], [495, 477], [576, 493], [494, 516], [480, 516], \
+                               [362, 496], [495, 476], [577, 493], [494, 517], [480, 517]])
     uw2 = Building(name='uw2', infec_prob=0.0, posn=[400, 527, 355, 393],
-                   door_posns=[[399, 390], [429, 394], [433, 394]])
+                   door_posns=[[399, 390], [429, 394], [433, 394], \
+                               [398, 390], [429, 395], [433, 395]])
 
 
     lb1 =           Building(name= 'lb1',infec_prob=0.0, posn=[621, 752, 421, 470], door_posns=[[664,470]])
@@ -135,8 +137,18 @@ def create_institutions():
                        posn=[840, 880, 460, 500], door_posns=[[840, 480]])
 
     #husky_village = StudentHousing(name= 'husky_village',infec_prob=0.0, posn=[1290, 1390, 160, 300], door_posns=[[1290, 160], [1390, 160], [1390, 300]])
-    parking_area_1 =ParkingArea(name= 'parking_area_1',infec_prob=0.0, posn=[467, 674, y_offset + 1, 215], door_posns=[[590, 215]])
-    parking_area_2 =ParkingArea(name= 'parking_area_2',infec_prob=0.0, posn=[x_offset + 1, 300, y_offset + 1, 525], door_posns=[[300,395]])
+
+    # With old door posns. flush with institution boundaries.
+    #parking_area_1 =ParkingArea(name= 'parking_area_1',infec_prob=0.0, posn=[467, 674, y_offset + 1, 215], door_posns=[[590, 215]])
+    #parking_area_2 =ParkingArea(name= 'parking_area_2',infec_prob=0.0, posn=[x_offset + 1, 300, y_offset + 1, 525], door_posns=[[300,395]])
+
+
+    # With new door posns. protruding from institution boundaries.
+    parking_area_1 = ParkingArea(name='parking_area_1', infec_prob=0.0, posn=[467, 674, y_offset + 1, 215],
+                                 door_posns=[[590, 216], [590, 217]])
+    parking_area_2 = ParkingArea(name='parking_area_2', infec_prob=0.0, posn=[x_offset + 1, 300, y_offset + 1, 525],
+                                 door_posns=[[301, 395], [302, 395]])
+
     #parking_area_3 =ParkingArea(name= 'parking_area_3',infec_prob=0.0, posn=[996, 1154, 563, 616], door_posns=[[1150, 563]])
     #ccc_1_2 =       Building(name= 'ccc_1_2',infec_prob=0.0, posn=[818, 1020, 484, 525])
     #ccc_3 =         Building(name= 'ccc_3',infec_prob=0.0, posn=[892, 1030, 343, 408])
@@ -242,39 +254,94 @@ def run_simulation(campus, cur_time, all_students):
 
         for i in na.arange(1, size_x - 1):      # go through each cell except boundaries
             for j in na.arange(1, size_y - 1):
-                if campus[i, j, 0] == 0:    # CampusOutdoors: black. For easy visualization of students.
-                    visualizer[j, i, 0] = 0
-                    visualizer[j, i, 1] = 0
-                    visualizer[j, i, 2] = 0
-                elif campus[i, j, 0] == -1: # doors
-                    visualizer[j, i, 0] = 0
-                    visualizer[j, i, 1] = 0
-                    visualizer[j, i, 2] = 1 # blue
 
-                elif campus[i, j, 0] == -2: # classroom borders: black
+
+                if campus[i, j, 0] == 0:    # CampusOutdoors: white. For easy visualization of students.
+                    visualizer[j, i, 0] = 1
+                    visualizer[j, i, 1] = 1
+                    visualizer[j, i, 2] = 1
+                elif campus[i, j, 0] == -1: # doors: cyan
                     visualizer[j, i, 0] = 0
                     visualizer[j, i, 1] = 0
-                    visualizer[j, i, 2] = 0
-                else:                       # institutions that are not CampusOutdoors
+                    visualizer[j, i, 2] = 1
+
+                elif campus[i, j, 0] == -2: # classroom borders: cyan
+                    visualizer[j, i, 0] = 0
+                    visualizer[j, i, 1] = 0
+                    visualizer[j, i, 2] = 1
+                else:                       # institutions that are not CampusOutdoors: white
                     visualizer[j, i, 0] = 1
                     visualizer[j, i, 1] = 1
                     visualizer[j, i, 2] = 1
 
+
+
+                    cur_instit_int = campus[i, j, 0]
+                    cur_instit = INSTITUTION_INT_MAP[cur_instit_int]
+                    x_min = cur_instit.posn[0]
+                    x_max = cur_instit.posn[1]
+                    y_min = cur_instit.posn[2]
+                    y_max = cur_instit.posn[3]
+
+                    if cur_instit_int > 0 and \
+                            (i in [x_min, x_max] or j in [y_min, y_max]):    # If it's a insitution border: color it black
+                        visualizer[j, i, 0] = 0
+                        visualizer[j, i, 1] = 0
+                        visualizer[j, i, 2] = 0
+
         for i in range(len(all_students)):  # Note: can use 1 - ratio to make redder
 
+            # CampusOutdoors is colored white. (1, 1, 1)
+            # Other Institutions are colored yellow. (Any institution with int > 0)  (1, 1, 0)
+            # Doors & classroom borders are colored cyan (0, 1, 1)
+            # If a cell has at least 1 infected student, the cell is colored black.  (0, 0, 0)
+            # If a cell has at least 1 student, but 0 infected students, it's colored red. (1, 0 0)
+
             # if campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 0] == 0: # If outdoors, we are going to color student grid
-            if campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] != 0 \
-                    and campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] != 0:
-                ratio = campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] / \
-                        campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2]
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, ratio, ratio])
-            elif campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] == 0 and \
-                            campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] != 0:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 0, 0])
-            elif campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] != 0 and \
-                            campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] == 0:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array(
-                    [1, 0, 1])                                  # ([1, 0, 1] is pink.) # TODO: set back to  [1, 1, 1]
+
+
+
+
+            # [int xpos, int ypos, [int instit#,
+            #                        int # of healthy stud at cell,
+            #                        int # of infected stud at cell,
+            #                        float aerosol_infec_prob,
+            #                        float surface_infec_prob] ]
+
+
+
+            if all_students[i].doing_random_walk:  # REMOVE
+
+
+
+                cur_stud = all_students[0]
+
+                #if there's at least 1 infected student at this cell, color cell black.
+                if campus[cur_stud.cur_posn[0], cur_stud. cur_posn[1], 2] > 0:
+                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 0, 0])
+                else:
+                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 0, 0])
+
+
+            '''
+            if all_students[i].doing_random_walk:   #REMOVE
+
+                # If this cell the student is on is not outdoors, and
+                if campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] != 0 \
+                        and campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] != 0:
+                    ratio = campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] / \
+                            campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2]
+                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, ratio, ratio])
+                elif campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] == 0 and \
+                                campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] != 0:
+                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 0, 0])
+                elif campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 1] != 0 and \
+                                campus[all_students[i].cur_posn[0], all_students[i].cur_posn[1], 2] == 0:
+                    visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array(
+                        [1, 0, 1])                                  # ([1, 0, 1] is pink.) # TODO: set back to  [1, 1, 1]
+
+            '''
+
 
         cur_time += DT
 
@@ -422,8 +489,8 @@ def student_pick_Courses(stud, num_of_class):
 # Adjustable-----------------------------------------------------------------
 x_offset = 290
 y_offset = 205
-DT = 0.5                # Unit: minutes.
-TOTAL_STUDENTS = 2000
+DT = 10               # Unit: minutes.
+TOTAL_STUDENTS = 20
 cur_time = 500          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
 #----------------------------------------------------------------------------
 
@@ -442,7 +509,7 @@ orig_img_size_x = orig_img_size_y * float(16) / 10
 #size_y = int(size_x/2.2)     # height of grid
 
 
-size_y = 250
+size_y = 300
 #size_y -= float(y_offset) * (float(size_y)/orig_img_size_y)
 size_y = int(size_y)
 size_x = size_y * float(16) / 10 # (Optimized for screen with aspect ratio 16:10)
