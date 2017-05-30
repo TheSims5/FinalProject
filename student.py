@@ -87,6 +87,7 @@ class Student:
         self.home_after_completing_schedule = False
 
         self.is_infected = False
+        self.is_contagious = False
 
         # self.prev_posn = None
 
@@ -576,6 +577,20 @@ class Student:
         '''May set Student's infection status is_infected to True if it is False, by evaluating grid cell's surface and 
         aerosol infection probabilities. 
         May increase grid cell's infection probabilities (to simulate a sneeze/cough/deposition of virus on surface). '''
+       
+        myX = self.cur_posn[0]
+        myY = self.cur_posn[1]
+        total_prob = grid[myX, myY, 3] + grid[myX, myY, 4] #sum of total infectivity
+        total_prob = np.maximum(total_prob, 1) #probability cannot exceed 1
+        if np.random.rand() < total_prob: #Does student get infected?
+            self.is_infected = True
+            
+        if (self.is_contagious): #If contagious go through probabilities of incrementing contagion
+            if np.random.rand() < SNEEZE_COUGH_PROB:
+                grid[myX, myY, 3] += SURFACE_INFEC_PROB_INCREMENT
+                
+            if np.random.rand() < SURFACE_PROB:
+                grid[myX, myY, 4] += SURFACE_INFEC_PROB_INCREMENT
 
         # TODO: IMPLEMENT THIS METHOD
         # Update is_infected
