@@ -91,7 +91,8 @@ class Student:
 
         self.is_infected = False
         self.is_contagious = False
-
+        self.time_of_infection = -1
+        
         # self.prev_posn = None
 
 
@@ -163,23 +164,23 @@ class Student:
 
 
         if self.cur_posn == [-1, -1] and self.cur_sched_activity_idx == None:
-            self.update_infec_status_and_cell_infec_probs(grid)
+            self.update_infec_status_and_cell_infec_probs(grid, cur_time)
             return grid
 
 
         elif self.heading_home:
             self.head_home(grid)
-            self.update_infec_status_and_cell_infec_probs(grid)
+            self.update_infec_status_and_cell_infec_probs(grid, cur_time)
             return grid
 
         elif self.sitting_in_class and not self.leaving_class:
-            self.update_infec_status_and_cell_infec_probs(grid)
+            self.update_infec_status_and_cell_infec_probs(grid, cur_time)
             return grid
 
         elif self.doing_random_walk:
             # Random walk outdoors, taking one step. Update and return grid.
             self.random_walk_one_step(grid)
-            self.update_infec_status_and_cell_infec_probs(grid)
+            self.update_infec_status_and_cell_infec_probs(grid, cur_time)
             return grid
 
 
@@ -228,7 +229,7 @@ class Student:
                 self.move_one_cell_toward_door(grid, closest_door_x, closest_door_y)
 
 
-        self.update_infec_status_and_cell_infec_probs(grid)
+        self.update_infec_status_and_cell_infec_probs(grid, cur_time)
 
         return grid
 
@@ -1382,7 +1383,7 @@ class Student:
 
 
 
-    def update_infec_status_and_cell_infec_probs(self, grid):
+    def update_infec_status_and_cell_infec_probs(self, grid, cur_time):
         '''May set Student's infection status is_infected to True if it is False, by evaluating grid cell's surface and 
         aerosol infection probabilities. 
         May increase grid cell's infection probabilities (to simulate a sneeze/cough/deposition of virus on surface). '''
@@ -1395,6 +1396,8 @@ class Student:
         print("total_prob = np.maximum(total_prob, 1): " + str(total_prob))                         #REMOVE
         if np.random.rand() < total_prob: #Does student get infected?
             self.is_infected = True
+            self.time_of_infection = cur_time
+            print("*******************************time_of_infection  " + str(cur_time))
             print("Student got infected. : " + str(total_prob))  # REMOVE
         else:
             print("Student NOT infected. : " + str(total_prob))  # REMOVE

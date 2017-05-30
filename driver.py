@@ -334,12 +334,12 @@ def run_simulation(campus, cur_time, all_students):
 
             #if there's at least 1 infected student at this cell, color cell black.
             if campus[cur_stud.cur_posn[0], cur_stud. cur_posn[1], 2] > 0:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1, 0, 0])
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0,1, 0])
             else:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 1 , 0])
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1,0 , 0])
 
             if cur_stud.is_contagious:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 1, 1])
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 0, 0])
 
             '''
             if all_students[i].doing_random_walk:   #REMOVE
@@ -380,9 +380,14 @@ def create_students():
 
     students = []
     for i in range(TOTAL_STUDENTS):
+
         s1 = Student()
+        s1.time_of_infection = -1
         if i < CONTAGIOUS_STUDENTS:
             s1.is_contagious = True
+            s1.is_infected = True
+            s1.time_of_infection = 0
+            print("*******************************time_of_infection  : 0")
             
         students.append(s1)
         rand_number = rand.randint(1,4)
@@ -512,8 +517,8 @@ def student_pick_Courses(stud, num_of_class):
 # Adjustable-----------------------------------------------------------------
 x_offset = 290
 y_offset = 205
-DT = 0.5             # Unit: minutes.
-TOTAL_STUDENTS = 200
+DT = 0.5           # Unit: minutes.
+TOTAL_STUDENTS = 1000
 CONTAGIOUS_STUDENTS = 10 #Number of contagious students
 cur_time = 510          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
 #----------------------------------------------------------------------------
@@ -558,3 +563,6 @@ all_courses = {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}
 all_students = create_students()
 
 run_simulation(campus, cur_time, all_students)
+
+for i in all_students:
+    print( str(i.time_of_infection))
