@@ -96,6 +96,7 @@ def add_institution_to_grid(institution_int, grid):
 
 
 def simulate_one_step(grid, students, total_students, cur_time):
+    
     ''' One time period simulator'''
     for i in range(total_students):
         grid = students[i].move(grid, cur_time, INSTITUTION_INT_MAP)

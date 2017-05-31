@@ -149,11 +149,11 @@ class Student:
 
 
 
-    def move(self, grid, cur_time, INSTITUTION_INT_MAP):
+    def move(self, grid, cur_time, INSTITUTION_INT_MAP, size_x, size_y):
         '''   '''
 
         #REMOVE:
-        print("CUR TIME IN MOVE:   "  + str(cur_time))
+        #print("CUR TIME IN MOVE:   "  + str(cur_time))
 
         if self.home_after_completing_schedule:
             # Do not need to call update_infec_status_and_cell_infec_probs()
@@ -179,7 +179,7 @@ class Student:
 
         elif self.doing_random_walk:
             # Random walk outdoors, taking one step. Update and return grid.
-            self.random_walk_one_step(grid)
+            self.random_walk_one_step(grid, size_x, size_y)
             self.update_infec_status_and_cell_infec_probs(grid, cur_time)
             return grid
 
@@ -317,7 +317,7 @@ class Student:
 
 
 
-    def random_walk_one_step(self, grid):
+    def random_walk_one_step(self, grid, size_x, size_y):
         '''Take one step in a random direction, outdoors (or remain in same position). Update grid.'''
 
         a_rand = rand.random()
@@ -335,7 +335,9 @@ class Student:
                 else:
                     temp_cur_posn[0] += addends[0][0]
                     temp_cur_posn[1] += addends[0][1]
-                    if grid[temp_cur_posn[0], temp_cur_posn[1], 0] == 0:
+                    if  temp_cur_posn[0] < size_x and  temp_cur_posn[0] > 0 \
+                    and temp_cur_posn[1] < size_y and  temp_cur_posn[1] > 0\
+                    and grid[temp_cur_posn[0], temp_cur_posn[1], 0] == 0:
                         if self.is_infected is True:
                             grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
                             grid[temp_cur_posn[0], temp_cur_posn[1], 2] += 1
@@ -347,7 +349,7 @@ class Student:
                         self.cur_posn[1] = temp_cur_posn[1]
                         self.last_x = addends[0][0]
                         self.last_y = addends[0][1]
-                        print("In random_walk(), new position:   " + str(temp_cur_posn))       #REMOVE
+                        #print("In random_walk(), new position:   " + str(temp_cur_posn))       #REMOVE
                         return grid
                     else:
                         continue
@@ -357,7 +359,9 @@ class Student:
                 else:
                     temp_cur_posn[0] += addends[0][0]
                     temp_cur_posn[1] += addends[0][1]
-                    if grid[temp_cur_posn[0], temp_cur_posn[1], 0] == 0:
+                    if temp_cur_posn[0] < size_x and  temp_cur_posn[0] > 0\
+                    and temp_cur_posn[1] < size_y and  temp_cur_posn[1] > 0\
+                    and grid[temp_cur_posn[0], temp_cur_posn[1], 0] == 0:
                         if self.is_infected is True:
                             grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
                             grid[temp_cur_posn[0], temp_cur_posn[1], 2] += 1
@@ -369,14 +373,16 @@ class Student:
                         self.cur_posn[1] = temp_cur_posn[1]
                         self.last_x = addends[0][0]
                         self.last_y = addends[0][1]
-                        print("In random_walk(), new position:   " + str(temp_cur_posn))  # REMOVE
+                        #print("In random_walk(), new position:   " + str(temp_cur_posn))  # REMOVE
                         return grid
                     else:
                         continue
             else:
                 temp_cur_posn[0] += addends[0][0]
                 temp_cur_posn[1] += addends[0][1]
-                if grid[temp_cur_posn[0], temp_cur_posn[1], 0] == 0:
+                if  temp_cur_posn[0] < size_x and  temp_cur_posn[0] > 0\
+                    and temp_cur_posn[1] < size_y and  temp_cur_posn[1] > 0\
+                    and grid[temp_cur_posn[0], temp_cur_posn[1], 0] == 0:
                     if self.is_infected is True:
                         grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
                         grid[temp_cur_posn[0], temp_cur_posn[1], 2] += 1
@@ -388,7 +394,7 @@ class Student:
                     self.cur_posn[1] = temp_cur_posn[1]
                     self.last_x = addends[0][0]
                     self.last_y = addends[0][1]
-                    print("In random_walk(), new position:   " + str(temp_cur_posn))  # REMOVE
+                    #print("In random_walk(), new position:   " + str(temp_cur_posn))  # REMOVE
                     return grid
                 else:
                     continue
@@ -1391,16 +1397,16 @@ class Student:
         myX = self.cur_posn[0]
         myY = self.cur_posn[1]
         total_prob = grid[myX, myY, 3] + grid[myX, myY, 4] #sum of total infectivity
-        print("total_prob = grid[myX, myY, 3] + grid[myX, myY, 4]: " + str(total_prob))             #REMOVE
+        #print("total_prob = grid[myX, myY, 3] + grid[myX, myY, 4]: " + str(total_prob))             #REMOVE
         total_prob = np.minimum(total_prob, 1) #probability cannot exceed 1
-        print("total_prob = np.maximum(total_prob, 1): " + str(total_prob))                         #REMOVE
+        #print("total_prob = np.maximum(total_prob, 1): " + str(total_prob))                         #REMOVE
         if np.random.rand() < total_prob: #Does student get infected?
             self.is_infected = True
             self.time_of_infection = cur_time
-            print("*******************************time_of_infection  " + str(cur_time))
-            print("Student got infected. : " + str(total_prob))  # REMOVE
-        else:
-            print("Student NOT infected. : " + str(total_prob))  # REMOVE
+            #print("*******************************time_of_infection  " + str(cur_time))
+            #print("Student got infected. : " + str(total_prob))  # REMOVE
+        #else:
+        #    print("Student NOT infected. : " + str(total_prob))  # REMOVE
             
         if (self.is_contagious): #If contagious go through probabilities of incrementing contagion
             if np.random.rand() < SNEEZE_COUGH_PROB:
