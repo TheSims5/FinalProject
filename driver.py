@@ -95,7 +95,7 @@ def add_institution_to_grid(institution_int, grid):
 #    return students
 
 
-def simulate_one_step(grid, students, total_students, cur_time):
+def simulate_one_step(grid, students, total_students, cur_time, size_x, size_y):
     print("cur time: " + str(cur_time))
     ''' One time period simulator'''
     for i in range(total_students):
@@ -241,7 +241,7 @@ def run_simulation(campus, cur_time, all_students):
     result = ax.imshow(visualizer, interpolation='none', extent=[0, 100, 0, 100], aspect='auto', zorder=0)
     ax.axis('off')
 
-    campus = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time)
+    campus = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time, size_x, size_y)
 
     for h in range(TOTAL_STEPS):
 
@@ -251,7 +251,7 @@ def run_simulation(campus, cur_time, all_students):
         #    print("student cur_posn: " + str(all_students[0].cur_posn))
 
 
-        campus = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time)
+        campus = simulate_one_step(campus, all_students, TOTAL_STUDENTS, cur_time, size_x, size_y)
         visualizer = na.zeros((size_y, size_x, 3), 'f')
 
 
@@ -518,7 +518,7 @@ def student_pick_Courses(stud, num_of_class):
 # Adjustable-----------------------------------------------------------------
 x_offset = 290
 y_offset = 205
-DT = 0.5           # Unit: minutes.
+DT = 5           # Unit: minutes.
 TOTAL_STUDENTS = 1000
 CONTAGIOUS_STUDENTS = 10 #Number of contagious students
 cur_time = 510          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
