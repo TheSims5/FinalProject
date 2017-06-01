@@ -258,8 +258,10 @@ def run_simulation(campus, cur_time, all_students):
 
         for i in na.arange(1, size_x - 1):      # go through each cell except boundaries
             for j in na.arange(1, size_y - 1):
+                campus[i, j, 3] = na.maximum(campus[i, j, 3] - AEROSOL_INFEC_PROB_DECR_PER_MIN, 0)
+                campus[i, j, 4] = na.maximum(campus[i, j, 4] - SURFACE_INFEC_PROB_DECR_PER_MIN, 0)
 
-
+                
                 if campus[i, j, 0] == 0:    # CampusOutdoors: white. For easy visualization of students.
                     visualizer[j, i, 0] = 1
                     visualizer[j, i, 1] = 1
@@ -334,13 +336,13 @@ def run_simulation(campus, cur_time, all_students):
             cur_stud = all_students[i]
 
             #if there's at least 1 infected student at this cell, color cell black.
-            if campus[cur_stud.cur_posn[0], cur_stud. cur_posn[1], 2] > 0:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0,1, 0])
+            if campus[cur_stud.cur_posn[0], cur_stud. cur_posn[1], 2] > 0: 
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1,0, 0]) # infected
             else:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([1,0 , 0])
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0,1 , 0]) #Healthy
 
             if cur_stud.is_contagious:
-                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 0, 0])
+                visualizer[all_students[i].cur_posn[1], all_students[i].cur_posn[0], :] = na.array([0, 0, 0]) # contagious
 
             '''
             if all_students[i].doing_random_walk:   #REMOVE
@@ -383,6 +385,8 @@ def create_students():
     for i in range(TOTAL_STUDENTS):
 
         s1 = Student()
+        #s1.is_infected = False
+        
         s1.time_of_infection = -1
         if i < CONTAGIOUS_STUDENTS:
             s1.is_contagious = True
@@ -518,10 +522,15 @@ def student_pick_Courses(stud, num_of_class):
 # Adjustable-----------------------------------------------------------------
 x_offset = 290
 y_offset = 205
-DT = 5           # Unit: minutes.
-TOTAL_STUDENTS = 1000
-CONTAGIOUS_STUDENTS = 10 #Number of contagious students
+DT = .5           # Unit: minutes.
+TOTAL_STUDENTS = 2000
+CONTAGIOUS_STUDENTS = 1 #Number of contagious students
 cur_time = 510          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
+AEROSOL_INFEC_PROB_DECR_PER_MIN = 1.0/180
+#  (value to decrement aerosol_infec_prob each min, for each cell)
+
+SURFACE_INFEC_PROB_DECR_PER_MIN = 1.0/300
+#  (value to decrement surface_infec_prob each min, for each cell)
 #----------------------------------------------------------------------------
 
 

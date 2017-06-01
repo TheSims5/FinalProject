@@ -12,35 +12,20 @@ from schedule import Schedule
 import copy
 
 
-MEAN_INHERENT_INFEC_THRESHOLD = 0.5
-#   (see comment for assigned_infec_prob_threshold)
-
-STD_INHERENT_INFEC_THRESHOLD = 0.12
-#   (see comment for assigned_infec_prob_threshold)
-
-assigned_infec_prob_threshold = np.random.normal(MEAN_INHERENT_INFEC_THRESHOLD, STD_INHERENT_INFEC_THRESHOLD)
-#  (a healthy Student who is on a cell whose surface & aerosol infec prob add up to a
-# value >  than this value will become infected. this is a value selected from the
-# normal(?) distrib with mean and std dev as specified in the corresponding
-# constants in Student class.)
 
 SNEEZE_COUGH_PROB = 0.2
 #   (probability a Student sneezes/coughs per min)
 
-SURFACE_PROB = 0.02
+SURFACE_PROB = 0.2
 #   (probability a Student increases the surface_infec_prob by SURFACE_INFEC_PROB in campus per min)
 
 AEROSOL_INFEC_PROB_INCREMENT = 0.05
 #   (The value to increment aerosol_infec_prob in campus by each time a Student does sneeze/cough)
 
-SURFACE_INFEC_PROB_INCREMENT = 0.2
+SURFACE_INFEC_PROB_INCREMENT = 0.1
 #   (The value to increment aerosol_infec_prob in campus by each time a Student does infect the surface in a cell)
 
-AEROSOL_INFEC_PROB_DECR_PER_MIN = 1.0/180
-#  (value to decrement aerosol_infec_prob each min, for each cell)
 
-SURFACE_INFEC_PROB_DECR_PER_MIN = 1.0/300
-#  (value to decrement surface_infec_prob each min, for each cell)
 
 #Probability for each kind of moving option.
 PROB_STAY_RANDOM = 0.2      # Probability is 0.2. range 0.0 - 0.2
@@ -146,6 +131,45 @@ class Student:
             else:
                 self.doing_random_walk = True
 
+    def get_closest_door_posn(self, door_list_x, door_list_y):
+        '''Returns a tuple of ints representing the x y position of the door closest to self.cur_posn.'''
+
+        idx_of_closest_door_in_door_list_x = 0
+        dis = self.get_distance(self.cur_posn[0], self.cur_posn[1], door_list_x[0], door_list_y[0])
+        for indexD in range(1, len(door_list_x)):
+            dis_2 = self.get_distance(self.cur_posn[0], self.cur_posn[1], door_list_x[indexD], door_list_y[indexD])
+            dis_2_remainder = dis_2%1.0
+            flag = np.isclose(0,dis_2_remainder)
+            if flag and (self.schedule.activities[self.cur_sched_activity_idx].dest_institution_int == 3):
+                idx_of_closest_door_in_door_list_x = indexD
+                dis = dis_2
+                break
+            #elif np.isclose(50.93,dis_2) or np.isclose(51.66,dis_2):
+            #    if indexD>0:
+            #        idx_of_closest_door_in_door_list_x = 0
+            #    else:
+            #        idx_of_closest_door_in_door_list_x = 0
+
+            elif dis_2 < dis:
+                idx_of_closest_door_in_door_list_x = indexD
+                dis = dis_2
+        #print ("get_closest_door_posn" + str(dis))
+        # Get the door position
+        door_x = door_list_x[idx_of_closest_door_in_door_list_x]
+        door_y = door_list_y[idx_of_closest_door_in_door_list_x]
+
+        return (door_x, door_y)
+
+
+
+
+    def move_one_cell_toward_door(self, grid, door_x, door_y):
+
+        # "north_move" is the distance to closest door of destination instit after moving 1 cell north.
+        north_move = self.get_distance(self.cur_posn[0], self.cur_posn[1] - 1, door_x, door_y)
+        south_move = self.get_distance(self.cur_posn[0], self.cur_posn[1] + 1, door_x, door_y)
+        west_move = self.get_distance(self.cur_posn[0] - 1, self.cur_posn[1], door_x, door_y)
+        east_move = self.get_distance(self.cur_posn[0] + 1, self.cur_posn[1], door_x, door_y)
 
 
 
@@ -164,7 +188,7 @@ class Student:
 
 
         if self.cur_posn == [-1, -1] and self.cur_sched_activity_idx == None:
-            self.update_infec_status_and_cell_infec_probs(grid, cur_time)
+            #self.update_infec_status_and_cell_infec_probs(grid, cur_time)
             return grid
 
 
@@ -400,835 +424,6 @@ class Student:
                     continue
 
 
-
-
-    # def random_walk_one_step(self, grid):
-    #     '''Take one step in a random direction, outdoors (or remain in same position). Update grid.'''
-    #
-    #     a_rand = rand.random()
-    #     if a_rand < PROB_STAY_RANDOM:
-    #         return
-    #
-    #     addends = [[1, 0], [0, 1], [-1, 0], [0, -1]]
-    #
-    #
-    #     rand.shuffle(addends)
-    #
-    #     temp_cur_posn = self.cur_posn
-    #
-    #
-    #     for i in range(len(addends)):
-    #         temp_cur_posn[0] += addends[i][0]
-    #         temp_cur_posn[1] += addends[i][1]
-    #
-    #         if grid[temp_cur_posn[0], temp_cur_posn[1], 0] == 0:
-    #             if self.is_infected is True:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-    #                 grid[temp_cur_posn[0], temp_cur_posn[1], 2] += 1
-    #             else:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-    #                 grid[temp_cur_posn[0], temp_cur_posn[1], 1] += 1
-    #
-    #             self.cur_posn[0] = temp_cur_posn[0]
-    #             self.cur_posn[1] = temp_cur_posn[1]
-    #
-    #             #print("Random walk one step, cur_posn: " + str(self.cur_posn))
-    #
-    #             return
-    #
-    #
-    #     '''
-    #     #Joey's orig version of random_walk_one_step:
-    #
-    #         if a_rand < PROB_MOVE_NORTH:
-    #             if self.is_infected is True:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-    #                 grid[self.cur_posn[0], self.cur_posn[1] + 1, 2] += 1
-    #                 self.cur_posn[1] += 1
-    #             else:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-    #                 grid[self.cur_posn[0], self.cur_posn[1] + 1, 1] += 1
-    #                 self.cur_posn[1] += 1
-    #         elif a_rand < PROB_MOVE_SOUTH:
-    #             if self.is_infected is True:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-    #                 grid[self.cur_posn[0], self.cur_posn[1] - 1, 2] += 1
-    #                 self.cur_posn[1] -= 1
-    #             else:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-    #                 grid[self.cur_posn[0], self.cur_posn[1] - 1, 1] += 1
-    #                 self.cur_posn[1] -= 1
-    #         elif a_rand < PROB_MOVE_WEST:
-    #             if self.is_infected is True:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-    #                 grid[self.cur_posn[0] - 1, self.cur_posn[1], 2] += 1
-    #                 self.cur_posn[0] -= 1
-    #             else:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-    #                 grid[self.cur_posn[0] - 1, self.cur_posn[1], 1] += 1
-    #                 self.cur_posn[0] -= 1
-    #         else:
-    #             if self.is_infected is True:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-    #                 grid[self.cur_posn[0] + 1, self.cur_posn[1], 2] += 1
-    #                 self.cur_posn[0] += 1
-    #             else:
-    #                 grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-    #                 grid[self.cur_posn[0] + 1, self.cur_posn[1], 1] += 1
-    #                 self.cur_posn[0] += 1
-    #     '''
-
-
-    def get_closest_door_posn(self, door_list_x, door_list_y):
-        '''Returns a tuple of ints representing the x y position of the door closest to self.cur_posn.'''
-
-        idx_of_closest_door_in_door_list_x = 0
-        dis = self.get_distance(self.cur_posn[0], self.cur_posn[1], door_list_x[0], door_list_y[0])
-        for indexD in range(1, len(door_list_x)):
-            dis_2 = self.get_distance(self.cur_posn[0], self.cur_posn[1], door_list_x[indexD], door_list_y[indexD])
-            if dis_2 < dis:
-                idx_of_closest_door_in_door_list_x = indexD
-                dis = dis_2
-
-        # Get the door position
-        door_x = door_list_x[idx_of_closest_door_in_door_list_x]
-        door_y = door_list_y[idx_of_closest_door_in_door_list_x]
-
-        return (door_x, door_y)
-
-
-
-
-    def move_one_cell_toward_door(self, grid, door_x, door_y):
-
-        # "north_move" is the distance to closest door of destination instit after moving 1 cell north.
-        north_move = self.get_distance(self.cur_posn[0], self.cur_posn[1] - 1, door_x, door_y)
-        south_move = self.get_distance(self.cur_posn[0], self.cur_posn[1] + 1, door_x, door_y)
-        west_move = self.get_distance(self.cur_posn[0] - 1, self.cur_posn[1], door_x, door_y)
-        east_move = self.get_distance(self.cur_posn[0] + 1, self.cur_posn[1], door_x, door_y)
-
-
-        '''
-        if self.last_x == 1 and self.last_y == 0:  # E
-            if north_move == min(north_move, south_move, east_move):
-                if grid[self.cur_posn[0], self.cur_posn[1] + 1, 0] != 0:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 1
-                    self.last_y = 0
-                    return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = 1
-                    return grid
-            elif south_move == min(north_move, south_move, east_move):
-                if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] != 0:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 1
-                    self.last_y = 0
-                    return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = -1
-                    return grid
-            else:  # east_move
-                if grid[self.cur_posn[0] + 1, self.cur_posn[1], 0] != 0:
-                    if north_move == min(north_move, south_move):
-                        if grid[self.cur_posn[0], self.cur_posn[1] + 1, 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = -1
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = 1
-                            return grid
-                    else:
-                        if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = 1
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = -1
-                            return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 1
-                    self.last_y = 0
-                    return grid
-        elif self.last_x == -1 and self.last_y == 0:  # W
-            if north_move == min(north_move, south_move, west_move):
-                if grid[self.cur_posn[0], self.cur_posn[1] + 1, 0] != 0:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = -1
-                    self.last_y = 0
-                    return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = 1
-                    return grid
-            elif south_move == min(north_move, south_move, west_move):
-                if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] != 0:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = -1
-                    self.last_y = 0
-                    return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = -1
-                    return grid
-            else:  # West
-                if grid[self.cur_posn[0] - 1, self.cur_posn[1], 0] != 0:
-                    if north_move == min(north_move, south_move):
-                        if grid[self.cur_posn[0], self.cur_posn[1] + 1, 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = -1
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = 1
-                            return grid
-                    else:
-                        if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = 1
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = -1
-                            return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = -1
-                    self.last_y = 0
-                    return grid
-        elif self.last_x == 0 and self.last_y == 1:  # N
-            if north_move == min(north_move, east_move, west_move):
-                if grid[self.cur_posn[0], self.cur_posn[1] + 1, 0] != 0:
-                    if east_move == min(east_move, west_move):
-                        if grid[self.cur_posn[0] + 1, self.cur_posn[1], 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = -1
-                            self.last_y = 0
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 1
-                            self.last_y = 0
-                            return grid
-                    else:
-                        if grid[self.cur_posn[0] - 1, self.cur_posn[1], 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 1
-                            self.last_y = 0
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = -1
-                            self.last_y = 0
-                            return grid
-                else:  # N
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = 1
-                    return grid
-            elif east_move == min(north_move, east_move, west_move):
-                if grid[self.cur_posn[0] + 1, self.cur_posn[1], 0] != 0:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = 1
-                    return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 1
-                    self.last_y = 0
-                    return grid
-            else:  # W
-                if grid[self.cur_posn[0] - 1, self.cur_posn[1], 0] != 0:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = 1
-                    return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = -1
-                    self.last_y = 0
-                    return grid
-        elif self.last_x == 0 and self.last_y == -1:  # S
-            if south_move == min(south_move, east_move, west_move):
-                if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] != 0:
-                    if east_move == min(east_move, west_move):
-                        if grid[self.cur_posn[0] + 1, self.cur_posn[1], 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = -1
-                            self.last_y = 0
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 1
-                            self.last_y = 0
-                            return grid
-                    else:
-                        if grid[self.cur_posn[0] - 1, self.cur_posn[1], 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 1
-                            self.last_y = 0
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = -1
-                            self.last_y = 0
-                            return grid
-                else:  # S
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = -1
-                    return grid
-            elif east_move == min(south_move, east_move, west_move):
-                if grid[self.cur_posn[0] + 1, self.cur_posn[1], 0] != 0:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = -1
-                    return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 1
-                    self.last_y = 0
-                    return grid
-            else:  # W
-                if grid[self.cur_posn[0] - 1, self.cur_posn[1], 0] != 0:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = -1
-                    return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = -1
-                    self.last_y = 0
-                    return grid
-        else:
-            if north_move == min(north_move, east_move, west_move):
-                if grid[self.cur_posn[0], self.cur_posn[1] + 1, 0] != 0:
-                    if east_move == min(east_move, west_move):
-                        if grid[self.cur_posn[0] + 1, self.cur_posn[1], 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = -1
-                            self.last_y = 0
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 1
-                            self.last_y = 0
-                            return grid
-                    else:
-                        if grid[self.cur_posn[0] - 1, self.cur_posn[1], 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 1
-                            self.last_y = 0
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = -1
-                            self.last_y = 0
-                            return grid
-                else:  # N
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = 1
-                    return grid
-            elif south_move == min(north_move, south_move, east_move, west_move):
-                if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] != 0:
-                    if east_move == min(east_move, west_move):
-                        if grid[self.cur_posn[0] + 1, self.cur_posn[1], 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = -1
-                            self.last_y = 0
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 1
-                            self.last_y = 0
-                            return grid
-                    else:
-                        if grid[self.cur_posn[0] - 1, self.cur_posn[1], 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 1
-                            self.last_y = 0
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[0] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = -1
-                            self.last_y = 0
-                            return grid
-                else:  # S
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[1] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 0
-                    self.last_y = -1
-                    return grid
-            elif east_move == min(north_move, south_move, east_move, west_move):
-                if grid[self.cur_posn[0] + 1, self.cur_posn[1], 0] != 0:
-                    if north_move == min(north_move, south_move):
-                        if grid[self.cur_posn[0], self.cur_posn[1] + 1, 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = -1
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = 1
-                            return grid
-                    else:
-                        if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = 1
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = -1
-                            return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] += 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = 1
-                    self.last_y = 0
-                    return grid
-            else:
-                if grid[self.cur_posn[0] - 1, self.cur_posn[1], 0] != 0:
-                    if north_move == min(north_move, south_move):
-                        if grid[self.cur_posn[0], self.cur_posn[1] + 1, 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = -1
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = 1
-                            return grid
-                    else:
-                        if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] != 0:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] += 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = 1
-                            return grid
-                        else:
-                            if self.is_infected is True:
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                            else:
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                                self.cur_posn[1] -= 1
-                                grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                            self.last_x = 0
-                            self.last_y = -1
-                            return grid
-                else:
-                    if self.is_infected is True:
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 2] += 1
-                    else:
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                        self.cur_posn[0] -= 1
-                        grid[self.cur_posn[0], self.cur_posn[1], 1] += 1
-                    self.last_x = -1
-                    self.last_y = 0
-                    return grid
-        '''
-
-
         if north_move == min(north_move, south_move, west_move, east_move):
             # If cell directly north of cur_posn is a wall, then move either east or west.
             if grid[self.cur_posn[0], self.cur_posn[1] - 1, 0] > 0:
@@ -1305,15 +500,25 @@ class Student:
                 #if north_move == min(north_move, south_move):
 
                 # Always move north
+                #if self.is_infected is True:
+                #    grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
+                #    grid[self.cur_posn[0], self.cur_posn[1] - 1, 2] += 1
+                #    self.cur_posn[1] -= 1
+                #else:
+                #    grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
+                #    grid[self.cur_posn[0], self.cur_posn[1] - 1, 1] += 1
+                #    self.cur_posn[1] -= 1
+
+
+
                 if self.is_infected is True:
                     grid[self.cur_posn[0], self.cur_posn[1], 2] -= 1
-                    grid[self.cur_posn[0], self.cur_posn[1] - 1, 2] += 1
-                    self.cur_posn[1] -= 1
+                    grid[self.cur_posn[0], self.cur_posn[1] + 1, 2] += 1
+                    self.cur_posn[1] += 1
                 else:
                     grid[self.cur_posn[0], self.cur_posn[1], 1] -= 1
-                    grid[self.cur_posn[0], self.cur_posn[1] - 1, 1] += 1
-                    self.cur_posn[1] -= 1
-
+                    grid[self.cur_posn[0], self.cur_posn[1] + 1, 1] += 1
+                    self.cur_posn[1] += 1
                 '''
                 elif south_move == min(north_move, south_move):
                     if self.is_infected is True:
@@ -1387,8 +592,6 @@ class Student:
             self.move_one_cell_toward_door(grid, self.starting_posn[0], self.starting_posn[1])
 
 
-
-
     def update_infec_status_and_cell_infec_probs(self, grid, cur_time):
         '''May set Student's infection status is_infected to True if it is False, by evaluating grid cell's surface and 
         aerosol infection probabilities. 
@@ -1397,16 +600,13 @@ class Student:
         myX = self.cur_posn[0]
         myY = self.cur_posn[1]
         total_prob = grid[myX, myY, 3] + grid[myX, myY, 4] #sum of total infectivity
-        #print("total_prob = grid[myX, myY, 3] + grid[myX, myY, 4]: " + str(total_prob))             #REMOVE
         total_prob = np.minimum(total_prob, 1) #probability cannot exceed 1
-        #print("total_prob = np.maximum(total_prob, 1): " + str(total_prob))                         #REMOVE
+        if(total_prob > 0):
+            print (str(total_prob))
         if np.random.rand() < total_prob: #Does student get infected?
+            print("I got infected")
             self.is_infected = True
             self.time_of_infection = cur_time
-            #print("*******************************time_of_infection  " + str(cur_time))
-            #print("Student got infected. : " + str(total_prob))  # REMOVE
-        #else:
-        #    print("Student NOT infected. : " + str(total_prob))  # REMOVE
             
         if (self.is_contagious): #If contagious go through probabilities of incrementing contagion
             if np.random.rand() < SNEEZE_COUGH_PROB:
