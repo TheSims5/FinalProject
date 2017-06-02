@@ -96,11 +96,13 @@ def add_institution_to_grid(institution_int, grid):
 
 
 def simulate_one_step(grid, students, total_students, cur_time, size_x, size_y):
-    print("cur time: " + str(cur_time))
     ''' One time period simulator'''
+    infected = 0
     for i in range(total_students):
+        if students[i].is_infected:
+            infected += 1
         grid = students[i].move(grid, cur_time, INSTITUTION_INT_MAP, size_x, size_y)
-
+    print(str(infected))
     return grid
 
 
@@ -523,7 +525,7 @@ def student_pick_Courses(stud, num_of_class):
 x_offset = 290
 y_offset = 205
 DT = .5           # Unit: minutes.
-TOTAL_STUDENTS = 2000
+TOTAL_STUDENTS = 500
 CONTAGIOUS_STUDENTS = 1 #Number of contagious students
 cur_time = 510          # current time, in minutes. (e.g. 601 == 10:01 a.m.)
 AEROSOL_INFEC_PROB_DECR_PER_MIN = 1.0/180
